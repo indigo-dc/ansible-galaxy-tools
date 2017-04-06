@@ -1,14 +1,17 @@
 - name: Stop Galaxy
   shell: "{{ galaxy_server_dir }}/run.sh --pid-file={{ galaxy_tools_pid_file_name }} --log-file={{ galaxy_tools_log_file_name }} --stop-daemon"
   ignore_errors: yes
+  when: supervisor_galaxy.failed is defined and not galaxy_runs_in_docker|bool
 
 - name: Wait for Galaxy to stop
   wait_for: port=8080 delay=5 state=stopped timeout=150
+  when: supervisor_galaxy.failed is defined and not galaxy_runs_in_docker|bool
 
 - name: Start Galaxy
   shell: "{{ galaxy_server_dir }}/run.sh --pid-file={{ galaxy_tools_pid_file_name }} --log-file={{ galaxy_tools_log_file_name }} --daemon"
   become_user: "{{ galaxy_user_name }}"
+  when: supervisor_galaxy.failed is defined and not galaxy_runs_in_docker|bool
 
 - name: Wait for Galaxy to start
   wait_for: port=8080 delay=5 state=started timeout=150
-
+  when: supervisor_galaxy.failed is defined and not galaxy_runs_in_docker|bool

@@ -3,6 +3,8 @@
   ignore_errors: yes
   become: yes
   become_user: root
+  when: supervisor_galaxy.failed is undefined and not galaxy_runs_in_docker|bool
 
 - pause:
     seconds: 5
+  when: supervisor_galaxy.failed is undefined and not galaxy_runs_in_docker|bool
