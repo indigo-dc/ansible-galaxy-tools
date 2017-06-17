@@ -7,6 +7,14 @@
   become: yes
   become_user: root
 
+- name: Check if Galaxy is managed by systemd/upstart
+  service: name="galaxy" state=started
+  register: systemd_galaxy
+  ignore_errors: yes
+  when: supervisor_galaxy.failed is defined
+  become: yes
+  become_user: root
+
 # All of the following includes are in the tasks folder
 
 - name: Restart Galaxy (in docker container)
@@ -16,10 +24,15 @@
 
 - name: Restart Galaxy (run.sh method)
   include: restart_galaxy_run_sh.yml
-  when: supervisor_galaxy.failed is defined and not galaxy_runs_in_docker|bool
+  when: supervisor_galaxy.failed is defined and systemd_galaxy.failed is defined and not galaxy_runs_in_docker|bool
   static: no
 
 - name: Restart Galaxy (supervisor method)
   include: restart_galaxy_supervisor.yml
   when: supervisor_galaxy.failed is undefined and not galaxy_runs_in_docker|bool
+  static: no
+
+- name: Restart Galaxy (systemd/upstart method)
+  include: restart_galaxy_systemd.yml
+  when: supervisor_galaxy.failed is defined and systemd_galaxy.failed is undefined and not galaxy_runs_in_docker|bool
   static: no
