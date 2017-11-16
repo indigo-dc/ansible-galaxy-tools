@@ -5,8 +5,13 @@
   become: yes
   become_user: root
 
+- name: 'Check if Galaxy is listening on 8080'
+  shell: 'lsof -t -i :8080'
+  register: running_process
+
 - name: 'Kill run.sh Galaxy instance listening on 8080 port'
-  shell: 'kill -9 $(lsof -t -i :8080)'
+  shell: 'kill -9 {{running_process.stdout_lines}}'
+  when: running_process.stdout != ""
 
 - name: Run run.sh Galaxy
   shell: "sudo -E -u {{ galaxy_user_name }} {{galaxy_server_dir}}/run.sh --daemon --log-file={{galaxy_tools_log_file_name}} --pid-file={{galaxy_tools_pid_file_name}}"
