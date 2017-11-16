@@ -1,11 +1,31 @@
 ---
+- name: Shutdown Galaxy
+  supervisorctl: name="galaxy:" state=stopped
+  ignore_errors: yes
+  become: yes
+  become_user: root
+
+- name: 'Kill run.sh Galaxy instance listening on 8080 port'
+  shell: 'kill -9 $(lsof -t -i :8080)'
+
+- name: Run run.sh Galaxy
+  shell: "sudo -E -u {{ galaxy_user_name }} {{galaxy_server_dir}}/run.sh --daemon --log-file={{galaxy_tools_log_file_name}} --pid-file={{galaxy_tools_pid_file_name}}"
+
+- name: 'Wait Galaxy is up'
+  wait_for:
+    host: 0.0.0.0
+    port: '8080'
+    timeout: 300
 
 - name: Create/invoke script virtualenv
   pip: name={{ item }} virtualenv={{ galaxy_tools_base_dir }}/venv virtualenv_command="{{ pip_virtualenv_command | default( 'virtualenv' ) }}"
   with_items:
-    - ephemeris==0.4.0  # Pinned version should make sure ephemeris version matches what the role has been tested with
+    - ephemeris
 
 - include: install_tool_list.yml
   with_items: '{{ galaxy_tools_tool_list_files }}'
   loop_control:
     loop_var: tool_list_file
+
+- name: "Stopping Galaxy"
+  shell: 'sudo -E -u {{ galaxy_user_name }} {{galaxy_server_dir}}/run.sh --stop-daemon --log-file={{galaxy_tools_log_file_name}} --pid-file={{galaxy_tools_pid_file_name}}'
