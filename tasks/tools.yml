@@ -8,6 +8,7 @@
 - name: 'Check if Galaxy is listening on 8080'
   shell: 'lsof -t -i :8080'
   register: running_process
+  ignore_errors: yes
 
 - name: 'Kill run.sh Galaxy instance listening on 8080 port'
   shell: 'kill -9 {{running_process.stdout_lines}}'
